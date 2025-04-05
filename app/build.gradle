@@ -1,0 +1,90 @@
+plugins {
+    id 'com.android.application'
+    id 'kotlin-android'
+    id 'com.google.gms.google-services'
+    id 'com.google.firebase.crashlytics'
+}
+
+android {
+    compileSdk 34
+    defaultConfig {
+        applicationId 'org.tarar.FieldPulse'
+        minSdkVersion 21
+        targetSdkVersion 34
+        versionCode 88
+        versionName '7.7'
+        multiDexEnabled true
+    }
+    namespace 'org.tarar.FieldPulse'
+
+    packagingOptions {
+        resources {
+            excludes += ['META-INF/DEPENDENCIES']
+        }
+    }
+
+    buildFeatures {
+        flavorDimensions = ['default']
+    }
+    productFlavors {
+        regular {
+            isDefault = true
+            ext.enableCrashlytics = false
+        }
+        google
+    }
+
+    testOptions {
+        unitTests {
+            includeAndroidResources = true
+        }
+    }
+    lint {
+        checkReleaseBuilds false
+    }
+
+    compileOptions {
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
+    }
+
+    kotlinOptions {
+        jvmTarget = JavaVersion.VERSION_17.toString()
+    }
+}
+
+dependencies {
+    implementation 'com.google.android.material:material:1.12.0'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    implementation 'androidx.preference:preference-ktx:1.2.1'
+    implementation 'androidx.core:core-ktx:1.13.1'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.github.judemanutd:autostarter:1.1.0'
+    implementation('dev.doubledot.doki:library:0.0.1@aar') {
+        transitive = true
+    }
+    testImplementation 'androidx.test:core:1.6.1'
+    testImplementation 'junit:junit:4.13.2'
+    testImplementation 'org.robolectric:robolectric:4.7.3'
+    googleImplementation platform('com.google.firebase:firebase-bom:33.2.0')
+    googleImplementation 'com.google.firebase:firebase-analytics'
+    googleImplementation 'com.google.firebase:firebase-crashlytics'
+    googleImplementation 'com.google.android.gms:play-services-location:21.3.0'
+    googleImplementation 'com.google.android.play:review:2.0.1'
+}
+
+tasks.register('copyFirebaseConfig', Copy) {
+    from '../../environment/google-services'
+    into '.'
+    include 'tarar-client-android.json'
+    rename('tarar-client-android.json', 'google-services.json')
+}
+afterEvaluate {
+    tasks.matching { it.name.contains('Google') }.configureEach { task ->
+        if (task.name.contains('Regular')) {
+            task.enabled false
+        } else {
+            task.dependsOn copyFirebaseConfig
+        }
+    }
+}
